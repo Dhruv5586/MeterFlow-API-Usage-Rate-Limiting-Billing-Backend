@@ -1,0 +1,186 @@
+{
+  "info": {
+    "name": "MeterFlow API - Phase 4 (Complete with Rate Limiting)",
+    "description": "Complete Postman collection for MeterFlow: JWT Authentication, Bcrypt Password Hashing, API Key Lifecycle, Redis Rate Limiting (Sliding Window & Token Bucket), HTTP 429 Error Handling, and RFC Rate Limit Headers.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api/v1", "type": "string" },
+    { "key": "jwt_token", "value": "", "type": "string" },
+    { "key": "created_api_key", "value": "", "type": "string" },
+    { "key": "created_api_key_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register New Developer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"founder@cloudscale.io\",\n  \"password\": \"SuperSecurePassword123!\",\n  \"display_name\": \"CloudScale Innovations\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login (Generate JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('jwt_token', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"founder@cloudscale.io\",\n  \"password\": \"SuperSecurePassword123!\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current User Profile (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }],
+            "url": { "raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. API Key Lifecycle",
+      "item": [
+        {
+          "name": "Create API Key (Plaintext Secret Shown Once)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.api_key) {",
+                  "    pm.collectionVariables.set('created_api_key', jsonData.api_key);",
+                  "    pm.collectionVariables.set('created_api_key_id', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Production Microservice Key\",\n  \"expires_in_days\": 90\n}"
+            },
+            "url": { "raw": "{{base_url}}/api-keys", "host": ["{{base_url}}"], "path": ["api-keys"] }
+          }
+        },
+        {
+          "name": "List User API Keys",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }],
+            "url": { "raw": "{{base_url}}/api-keys", "host": ["{{base_url}}"], "path": ["api-keys"] }
+          }
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }],
+            "url": { "raw": "{{base_url}}/api-keys/{{created_api_key_id}}", "host": ["{{base_url}}"], "path": ["api-keys", "{{created_api_key_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. API Gateway & Redis Rate Limiting",
+      "item": [
+        {
+          "name": "Gateway Verify (Inspect Rate Limit Headers)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-Key", "value": "{{created_api_key}}" }],
+            "url": { "raw": "{{base_url}}/gateway/verify", "host": ["{{base_url}}"], "path": ["gateway", "verify"] }
+          }
+        },
+        {
+          "name": "Gateway Downstream Echo",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-Key", "value": "{{created_api_key}}" }],
+            "url": { "raw": "{{base_url}}/gateway/echo", "host": ["{{base_url}}"], "path": ["gateway", "echo"] }
+          }
+        },
+        {
+          "name": "Missing X-API-Key (Expect 401)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/gateway/verify", "host": ["{{base_url}}"], "path": ["gateway", "verify"] }
+          }
+        },
+        {
+          "name": "Invalid X-API-Key (Expect 401)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-Key", "value": "mf_live_bogus_key" }],
+            "url": { "raw": "{{base_url}}/gateway/verify", "host": ["{{base_url}}"], "path": ["gateway", "verify"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. System Catalog & Analytics",
+      "item": [
+        {
+          "name": "Health Check (DB & Redis)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "List Subscription Plans",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/plans", "host": ["{{base_url}}"], "path": ["plans"] }
+          }
+        },
+        {
+          "name": "Usage Summary Metrics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/usage/summary", "host": ["{{base_url}}"], "path": ["usage", "summary"] }
+          }
+        },
+        {
+          "name": "Paginated Usage Events",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/usage/events?page=1&size=20", "host": ["{{base_url}}"], "path": ["usage", "events"], "query": [{"key": "page", "value": "1"}, {"key": "size", "value": "20"}] }
+          }
+        }
+      ]
+    }
+  ]
+}

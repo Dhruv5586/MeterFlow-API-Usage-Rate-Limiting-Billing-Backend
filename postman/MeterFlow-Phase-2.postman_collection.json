@@ -1,0 +1,210 @@
+{
+  "info": {
+    "_postman_id": "meterflow-phase-2-collection",
+    "name": "MeterFlow — Phase 2 API Collection",
+    "description": "Read-only endpoints for MeterFlow: System Health, Developers, Plans, and API Usage Events.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "DEMO_USER_ID",
+      "value": "20000000-0000-4000-8000-000000000001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System Health",
+      "item": [
+        {
+          "name": "Get Health Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/health",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "v1", "health"]
+            },
+            "description": "Returns application status and verifies live PostgreSQL connection."
+          },
+          "response": [
+            {
+              "name": "Healthy Response",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"healthy\",\n  \"version\": \"0.1.0\",\n  \"server_time\": \"2026-11-16T10:50:00Z\",\n  \"database_connected\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/users?page=1&size=10",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "v1", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lists developer users paginated. Password hashes are never returned."
+          },
+          "response": [
+            {
+              "name": "Paginated Users Response",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"items\": [\n    {\n      \"id\": \"20000000-0000-4000-8000-000000000001\",\n      \"email\": \"admin@technova.io\",\n      \"display_name\": \"TechNova Solutions\",\n      \"status\": \"active\",\n      \"created_at\": \"2026-11-16T10:00:00Z\",\n      \"updated_at\": \"2026-11-16T10:00:00Z\"\n    }\n  ],\n  \"total\": 3,\n  \"page\": 1,\n  \"size\": 10,\n  \"total_pages\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get User By UUID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/users/{{DEMO_USER_ID}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "v1", "users", "{{DEMO_USER_ID}}"]
+            },
+            "description": "Returns user profile, active subscriptions, and API key prefixes."
+          },
+          "response": [
+            {
+              "name": "User Detail Response",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"20000000-0000-4000-8000-000000000001\",\n  \"email\": \"admin@technova.io\",\n  \"display_name\": \"TechNova Solutions\",\n  \"status\": \"active\",\n  \"api_keys\": [\n    {\n      \"id\": \"40000000-0000-4000-8000-000000000001\",\n      \"name\": \"TechNova Production Key\",\n      \"key_prefix\": \"mf_live_nIbXZPXs\"\n    }\n  ],\n  \"subscriptions\": [\n    {\n      \"id\": \"30000000-0000-4000-8000-000000000001\",\n      \"plan_code\": \"enterprise\",\n      \"plan_name\": \"Enterprise\",\n      \"status\": \"active\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "User Not Found (404)",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"User with identifier '00000000-0000-0000-0000-000000000000' was not found.\",\n  \"path\": \"/api/v1/users/00000000-0000-0000-0000-000000000000\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subscription Plans",
+      "item": [
+        {
+          "name": "List Active Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/plans",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "v1", "plans"]
+            },
+            "description": "Lists available pricing catalog plans."
+          },
+          "response": [
+            {
+              "name": "Plans Response",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\"code\": \"free\", \"name\": \"Free\", \"price\": \"0.00\", \"currency\": \"USD\"},\n  {\"code\": \"pro\", \"name\": \"Pro\", \"price\": \"29.00\", \"currency\": \"USD\"},\n  {\"code\": \"enterprise\", \"name\": \"Enterprise\", \"price\": \"299.00\", \"currency\": \"USD\"}\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Usage & Metering",
+      "item": [
+        {
+          "name": "Get Usage Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/usage/summary?user_id={{DEMO_USER_ID}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "v1", "usage", "summary"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{DEMO_USER_ID}}"
+                }
+              ]
+            },
+            "description": "Returns total requests, success/failure counts, average latency, and payload size."
+          },
+          "response": [
+            {
+              "name": "Usage Summary Response",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"total_requests\": 333,\n  \"successful_requests\": 312,\n  \"failed_requests\": 21,\n  \"average_latency_ms\": 208.1,\n  \"total_response_bytes\": 3140764\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Usage Events (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/usage/events?page=1&size=20&http_method=GET",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "v1", "usage", "events"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "http_method",
+                  "value": "GET"
+                }
+              ]
+            },
+            "description": "Paginated API usage request log."
+          },
+          "response": [
+            {
+              "name": "Usage Events Response",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"items\": [\n    {\n      \"endpoint\": \"/api/v2/payments/process\",\n      \"http_method\": \"GET\",\n      \"status_code\": 201,\n      \"latency_ms\": 153,\n      \"response_size_bytes\": 2256\n    }\n  ],\n  \"total\": 1000,\n  \"page\": 1,\n  \"size\": 20,\n  \"total_pages\": 50\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

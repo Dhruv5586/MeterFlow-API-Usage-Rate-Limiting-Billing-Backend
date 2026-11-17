@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "MeterFlow API - Phase 5 (Billing Engine & Daily Aggregations)",
+    "description": "Complete Postman collection for MeterFlow Phase 5: Daily Usage Rollup Aggregations, Real-time Billing Preview, Tiered Overage Calculations, Invoice Generation, Invoice Inspection, and Payment Settlement.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api/v1", "type": "string" },
+    { "key": "jwt_token", "value": "", "type": "string" },
+    { "key": "invoice_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login as Demo Developer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('jwt_token', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@startup.io\",\n  \"password\": \"DemoPassword123!\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Billing & Invoicing Engine",
+      "item": [
+        {
+          "name": "Preview Current Billing Accruals",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/billing/preview", "host": ["{{base_url}}"], "path": ["billing", "preview"] }
+          }
+        },
+        {
+          "name": "Generate Monthly Invoice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('invoice_id', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period_start\": \"2026-11-01\",\n  \"period_end\": \"2026-11-30\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/billing/invoices/generate", "host": ["{{base_url}}"], "path": ["billing", "invoices", "generate"] }
+          }
+        },
+        {
+          "name": "List All Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/billing/invoices", "host": ["{{base_url}}"], "path": ["billing", "invoices"] }
+          }
+        },
+        {
+          "name": "Get Invoice Details with Line Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/billing/invoices/{{invoice_id}}", "host": ["{{base_url}}"], "path": ["billing", "invoices", "{{invoice_id}}"] }
+          }
+        },
+        {
+          "name": "Pay / Settle Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/billing/invoices/{{invoice_id}}/pay", "host": ["{{base_url}}"], "path": ["billing", "invoices", "{{invoice_id}}", "pay"] }
+          }
+        },
+        {
+          "name": "Trigger Daily Usage Aggregation Rollup",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/billing/rollup", "host": ["{{base_url}}"], "path": ["billing", "rollup"] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-11-16T19:38:58.789689+00:00",
+  "total_source_records": 5000,
+  "total_api_records_identified": 2226,
+  "total_static_records_excluded": 1065,
+  "total_normal_website_records_excluded": 1709,
+  "total_unknown_records": 0,
+  "total_invalid_records": 0,
+  "total_records_processed": 2226,
+  "total_records_successfully_imported": 1226,
+  "total_duplicate_records_skipped": 1000,
+  "total_rejected_records": 0,
+  "import_execution_time_seconds": 196.51
+}
