@@ -146,6 +146,13 @@ class Settings(BaseSettings):
         elif v.startswith("postgresql://") and not v.startswith("postgresql+"):
             v = v.replace("postgresql://", "postgresql+psycopg://", 1)
 
+        # Neon pooler does not support SCRAM channel binding; strip if present to prevent auth failures
+        if "channel_binding=" in v:
+            import re
+            v = re.sub(r"[?&]channel_binding=[^&]*", "", v)
+            if "?" not in v and "&" in v:
+                v = v.replace("&", "?", 1)
+
         # Resilient DNS fallback: if local router DNS fails, resolve via public DNS
         if "hostaddr=" not in v and "@" in v:
             try:

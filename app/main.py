@@ -245,3 +245,10 @@ def root():
         "docs_url": "/docs",
         "health_url": "/api/v1/health",
     }
+
+
+@app.get("/health", include_in_schema=False)
+def root_health():
+    """Convenience alias for /api/v1/health."""
+    from app.api.routes.health import get_health
+    return get_health()
